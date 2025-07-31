@@ -9,10 +9,10 @@ public class AutoPointCloudPlayer : MonoBehaviour
     {
         Debug.Log($"▶ AutoPlay: {pointCloudName} - q{quality}");
 
-        GameObject prefab = Resources.Load<GameObject>("Prefabs/Preview_PointCloudPrefab");
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/Preview_PointCloudPrefab_NET4U");
         if (prefab == null)
         {
-            Debug.LogError("❌ Prefab 'Preview_PointCloudPrefab' not found!");
+            Debug.LogError(" Prefab 'Preview_PointCloudPrefab_NET4U' not found!");
             return;
         }
 

@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using UnityEngine;
 
 public class STTaskBase
@@ -14,10 +12,7 @@ public class STTaskBase
 
     public string currentSequenceString = "";
 
-    private Mesh[] firstMeshes;
-    private Mesh[] secondMeshes;
-
-    AnimatePointCloudBase animateComp;
+    private AnimatePointCloudBase animateComp;
 
     public STTaskBase(List<STSequence> sequences)
     {
@@ -46,7 +41,7 @@ public class STTaskBase
         }
 
         STSequence currSequence = sequences[currentSequenceIndex];
-        string pcName = currSequence.ObjectType.ToString(); // Use enum name as folder name
+        string pcName = currSequence.ObjectType.ToString();
         PointCloudObject currPcObject = PointCloudsLoader.Instance.pcObjects.FirstOrDefault(p => p.pcName == pcName);
 
         if (currPcObject == null)
@@ -55,50 +50,34 @@ public class STTaskBase
             return;
         }
 
-        if (currSequence.RepresentationType == PointCloudRepresentation.Mesh)
+        List<string> framePaths = currPcObject.framePaths;
+
+        if (framePaths == null || framePaths.Count == 0)
         {
-            firstMeshes = currPcObject.meshes[currSequence.FirstQuality];
-            firstMeshes = firstMeshes.Take(firstMeshes.Length / 2).ToArray();
-
-            secondMeshes = currPcObject.meshes[currSequence.SecondQuality];
-            secondMeshes = secondMeshes.Skip(secondMeshes.Length / 2).ToArray();
-
-            Material[] firstMaterials = currPcObject.meshMaterials[currSequence.FirstQuality];
-            firstMaterials = firstMaterials.Take(firstMaterials.Length / 2).ToArray();
-
-            Material[] secondMaterials = currPcObject.meshMaterials[currSequence.SecondQuality];
-            secondMaterials = secondMaterials.Skip(secondMaterials.Length / 2).ToArray();
-
-            animateComp.meshMaterials = firstMaterials.Concat(secondMaterials).ToArray();
-            animateComp.SetIsMesh(true);
-        }
-        else
-        {
-            firstMeshes = currPcObject.frames.Take(currPcObject.frames.Count / 2).ToArray();
-            secondMeshes = currPcObject.frames.Skip(currPcObject.frames.Count / 2).ToArray();
-
-            animateComp.SetIsMesh(false);
-
-            var rend = animateComp.GetComponent<MeshRenderer>();
-            if (rend != null)
-                rend.materials = new Material[] { STManager.Instance.GetMaterialFromRepresentation(currSequence.RepresentationType) };
+            Debug.LogWarning("[STTaskBase] No frame paths found for current PointCloudObject.");
+            return;
         }
 
-        animateComp.CurrentMeshes = firstMeshes.Concat(secondMeshes).ToArray();
+        animateComp.LoadQuality(framePaths,"");
+
+        // Imposta il materiale corretto in base al tipo di rappresentazione
+        var renderer = animateComp.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.material = STManager.Instance.GetMaterialFromRepresentation(currSequence.RepresentationType);
+        }
+
         STManager.Instance.SetCurrentPCDistance(currSequence.Distance);
 
         if (currentSequenceIndex < sequences.Count)
         {
-            string firstQuality = currSequence.FirstQuality.ToString();
-            string secondQuality = currSequence.SecondQuality.ToString();
-
-            string qualityString = firstQuality + "_" + qualityPrefix + secondQuality;
+            string qualityString = $"{currSequence.FirstQuality}_{qualityPrefix}{currSequence.SecondQuality}";
             string distanceString = ((int)(currSequence.Distance * 100f)).ToString();
 
             string outTextFormatted = MakeSequenceString(
-                                pcName,
-                                qualityPrefix + qualityString,
-                                distancePrefix + distanceString);
+                pcName,
+                qualityString,
+                distancePrefix + distanceString);
 
             currentSequenceString = outTextFormatted;
             STManager.Instance.SetDisplayString(outTextFormatted);

@@ -22,46 +22,46 @@ public class UIManager : MonoBehaviour
 
         if (loader == null)
         {
-            Debug.LogError("❌ PointCloudsLoader.Instance è null! Assicurati che esista in scena.");
+            Debug.LogError("PointCloudsLoader.Instance is null! Make sure it exists in the scene.");
             return;
         }
 
         if (loader.pcObjects.Count > 0)
         {
-            Debug.Log("[UIManager] Dati già presenti, popolamento immediato.");
+            Debug.Log("[UIManager] Data already present, populating dropdowns immediately.");
             PopulateDropdowns();
         }
         else
         {
-            Debug.Log("[UIManager] Nessun dato ancora caricato, mi sottoscrivo a OnLoaded.");
+            Debug.Log("[UIManager] No data loaded yet, subscribing to OnLoaded event.");
             PointCloudsLoader.OnLoaded += PopulateDropdowns;
         }
     }
 
     void PopulateDropdowns()
     {
-        Debug.Log("[UIManager] Popolamento dropdown avviato.");
+        Debug.Log("[UIManager] Populating dropdowns.");
         nameToData.Clear();
         List<string> names = new List<string>();
 
         foreach (var pc in PointCloudsLoader.Instance.pcObjects)
         {
-            Debug.Log($"[UIManager] Trovato oggetto: {(pc == null ? "null" : pc.ToString())}");
-            Debug.Log($"[UIManager] Trovato oggetto: {pc.GetType().Name} | Nome: '{pc.pcName}'");
+            Debug.Log($"[UIManager] Found object: {(pc == null ? "null" : pc.ToString())}");
+            Debug.Log($"[UIManager] Type: {pc.GetType().Name} | Name: '{pc.pcName}'");
 
             if (!string.IsNullOrEmpty(pc.pcName))
             {
-                Debug.Log($"✅ Aggiungo point cloud '{pc.pcName}' al dropdown.");
+                Debug.Log($"Adding point cloud '{pc.pcName}' to dropdown.");
                 names.Add(pc.pcName);
                 nameToData[pc.pcName] = pc;
             }
             else
             {
-                Debug.LogWarning("⚠️ Point cloud con nome nullo o vuoto ignorato.");
+                Debug.LogWarning("Point cloud with null or empty name ignored.");
             }
         }
 
-        Debug.Log($"[UIManager] Nomi trovati: {string.Join(", ", names)}");
+        Debug.Log($"[UIManager] Found names: {string.Join(", ", names)}");
 
         pointCloudDropdown.ClearOptions();
         pointCloudDropdown.AddOptions(names);
@@ -81,7 +81,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[UIManager] Nessun nome valido trovato. Dropdown non popolato.");
+            Debug.LogWarning("[UIManager] No valid names found. Dropdown is empty.");
         }
     }
 
@@ -89,14 +89,15 @@ public class UIManager : MonoBehaviour
     {
         if (!nameToData.TryGetValue(pcName, out PointCloudObject data))
         {
-            Debug.LogError($"❌ Impossibile trovare PointCloudObject con nome '{pcName}'.");
+            Debug.LogError($"Cannot find PointCloudObject with name '{pcName}'.");
             return;
         }
 
-        GameObject prefab = Resources.Load<GameObject>("Prefabs/Preview_PointCloudPrefab");
+        // IMPORTANT: Make sure the prefab path/name matches your new prefab!
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/Preview_PointCloudPrefab_NET4U");
         if (prefab == null)
         {
-            Debug.LogError("❌ Preview_PointCloudPrefab non trovato in Resources/Prefabs");
+            Debug.LogError("Preview_PointCloudPrefab_NET4U not found in Resources/Prefabs.");
             return;
         }
 
@@ -126,21 +127,19 @@ public class UIManager : MonoBehaviour
 
     public void OnPlay()
     {
-        string fixedName = "BlueSpin_UVG_vox10_25_0_250"; // Nome della cartella principale
-        string fixedQuality = "1"; // Qualità fissa q1
+        string fixedName = "BlueSpin_UVG_vox10_25_0_250"; // Name of the main folder
+        string fixedQuality = "1"; // Fixed quality q1
 
-        Debug.Log($"▶ PLAY fissa | {fixedName} - q{fixedQuality}");
+        Debug.Log($"[UIManager] PLAY fixed | {fixedName} - q{fixedQuality}");
 
         currentPC = PointCloudsLoader.Instance.Spawn(fixedName, fixedQuality);
 
         if (currentPC != null)
         {
-            currentPC.SetIsMesh(meshToggle.isOn); // puoi disattivare anche questo se vuoi sempre point cloud
+            currentPC.SetIsMesh(meshToggle.isOn); // You can disable this if you always want point cloud
             currentPC.SetAnimate(true);
         }
     }
-
-
 
     void OnReset()
     {

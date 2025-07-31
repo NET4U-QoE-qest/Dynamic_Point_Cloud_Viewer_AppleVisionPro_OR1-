@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public enum PCMaterialType { Point, Disk, Square, Mesh };
+public enum PCMaterialType { Point, Disk, Square, Mesh, PointCloud };
 
 public class MaterialChanger : MonoBehaviour
 {

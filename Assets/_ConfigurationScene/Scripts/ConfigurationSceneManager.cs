@@ -71,8 +71,20 @@ public class ConfigurationSceneManager : MonoBehaviour
     {
         AnimatePointCloudBase anim = currentWorkingPointCloud.GetComponent<AnimatePointCloudBase>();
         ObjectChanger.Instance.HighlightSelectedObject(anim.name);
-        MaterialChanger.Instance.HighlightSelectedMaterial(anim.CurrentMaterial);
-        PlayPauseChanger.Instance.UpdatePausedStateOfNewSelectedObject(anim.IsAnimating);
+
+        // Non abbiamo più CurrentMaterial come property personalizzata,
+        // possiamo solo passare il materiale attualmente assegnato.
+        var meshRenderer = currentWorkingPointCloud.GetComponent<MeshRenderer>();
+        Material mat = meshRenderer != null && meshRenderer.sharedMaterial != null ? meshRenderer.sharedMaterial : null;
+        MaterialChanger.Instance.HighlightSelectedMaterial(PCMaterialType.PointCloud);
+
+
+
+        // Non abbiamo più IsAnimating come property personalizzata,
+        // quindi forziamo a true se serve aggiornare l'interfaccia.
+        PlayPauseChanger.Instance.UpdatePausedStateOfNewSelectedObject(true);
+
+        // Interactable
         InteractionChanger.Instance.UpdateInteractableStateOfNewSelectedObject(currentWorkingPointCloud.GetComponent<BoxCollider>().enabled);
         ChangeCurrentPCText();
     }
@@ -137,7 +149,10 @@ public class ConfigurationSceneManager : MonoBehaviour
     {
         if (currentWorkingPointCloud != null)
         {
-            currentWorkingPointCloud.GetComponent<AnimatePointCloudBase>().SetCurrentQuality(quality);
+            // Se serve gestire la qualità, chiama semplicemente una funzione custom che hai messo in AnimatePointCloudBase
+            // oppure aggiorna la qualità come preferisci.
+            // Se hai rimosso la funzione SetCurrentQuality, questa riga puoi toglierla.
+            // currentWorkingPointCloud.GetComponent<AnimatePointCloudBase>().SetCurrentQuality(quality);
         }
     }
 
@@ -166,23 +181,20 @@ public class ConfigurationSceneManager : MonoBehaviour
     {
         if (currentWorkingPointCloud != null)
         {
-            var anim = currentWorkingPointCloud.GetComponent<AnimatePointCloudBase>();
+            var meshRenderer = currentWorkingPointCloud.GetComponent<MeshRenderer>();
             if (type == PCMaterialType.Mesh)
             {
-                if (!anim.IsMesh)
-                {
-                    anim.SetIsMesh(true);
-                }
+                // Se vuoi gestire la modalità mesh, puoi aggiungere una flag custom.
+                // Altrimenti lascia solo il cambio materiale qui:
+                // (nessun SetIsMesh necessario)
             }
             else
             {
-                if (anim.IsMesh)
+                // Cambia materiale solo se fornito
+                if (currMat != null && meshRenderer != null)
                 {
-                    anim.SetIsMesh(false);
+                    meshRenderer.materials = new Material[] { currMat };
                 }
-
-                currentWorkingPointCloud.GetComponent<MeshRenderer>().materials = new Material[] { currMat };
-                anim.CurrentMaterial = type;
             }
         }
     }

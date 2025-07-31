@@ -46,8 +46,7 @@ MonoBehaviour:
   m_RequiresSettingsUpdate: 0
   m_AutomaticLoading: 0
   m_AutomaticRunning: 0
-  m_Loaders:
-  - {fileID: 11400000, guid: 28fe04729daeb2345bebc951fad25769, type: 2}
+  m_Loaders: []
 --- !u!114 &-6546576050900071261
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,7 +90,25 @@ MonoBehaviour:
   m_RequiresSettingsUpdate: 0
   m_AutomaticLoading: 0
   m_AutomaticRunning: 0
-  m_Loaders: []
+  m_Loaders:
+  - {fileID: 11400000, guid: b25f0a61e3c71d248a99b4c4d4a7e6be, type: 2}
+--- !u!114 &-1621353955583568990
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4c3631f5e58749a59194e0cf6baf6d5, type: 3}
+  m_Name: VisionOS Providers
+  m_EditorClassIdentifier: 
+  m_RequiresSettingsUpdate: 0
+  m_AutomaticLoading: 0
+  m_AutomaticRunning: 0
+  m_Loaders:
+  - {fileID: 11400000, guid: 08181441f46094dd69cf35b902e939a3, type: 2}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -104,7 +121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2dc886499c26824283350fa532d087d, type: 3}
   m_Name: XRGeneralSettings
   m_EditorClassIdentifier: 
-  Keys: 01000000070000001c000000040000000e0000000d000000
+  Keys: 01000000070000001c000000040000000e0000000d00000024000000
   Values:
   - {fileID: -6517218471499782410}
   - {fileID: -8196854396901781169}
@@ -112,6 +129,7 @@ MonoBehaviour:
   - {fileID: -6546576050900071261}
   - {fileID: 3671550965327740455}
   - {fileID: 6971510910139262515}
+  - {fileID: 6385957520296136479}
 --- !u!114 &127818491021691229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -158,8 +176,7 @@ MonoBehaviour:
   m_AutomaticLoading: 0
   m_AutomaticRunning: 0
   m_Loaders:
-  - {fileID: 11400000, guid: 28fe04729daeb2345bebc951fad25769, type: 2}
-  - {fileID: 11400000, guid: e57d4f74aef153c4da396be55a056dee, type: 2}
+  - {fileID: 11400000, guid: 3da0ace5a155949a6af6f47c6a0691ad, type: 2}
 --- !u!114 &3671550965327740455
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -190,6 +207,20 @@ MonoBehaviour:
   m_AutomaticLoading: 0
   m_AutomaticRunning: 0
   m_Loaders: []
+--- !u!114 &6385957520296136479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
+  m_Name: VisionOS Settings
+  m_EditorClassIdentifier: 
+  m_LoaderManagerInstance: {fileID: -1621353955583568990}
+  m_InitManagerOnStart: 0
 --- !u!114 &6971510910139262515
 MonoBehaviour:
   m_ObjectHideFlags: 0

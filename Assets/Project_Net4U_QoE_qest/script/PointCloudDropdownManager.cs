@@ -54,13 +54,17 @@ public class PointCloudDropdownManager : MonoBehaviour
         qualityDropdown.onValueChanged.AddListener(OnQualityChanged);
         distanceDropdown.onValueChanged.AddListener(OnDistanceChanged);
 
-        OnDistanceChanged(distanceDropdown.value);
+        // DISABLED: NON aggiornare la QoE all'avvio!
+        // OnDistanceChanged(distanceDropdown.value);
+        Debug.Log("[DropdownManager] DISABLED: OnDistanceChanged(distanceDropdown.value) in Start");
 
         if (pointCloudNames.Count > 0)
         {
             controller.LoadPointCloud(pointCloudNames[pointCloudDropdown.value], controller.CurrentQuality);
             controller.transform.position = GetPositionInFront(currentDistance);
-            UpdateFeedbackPanel();
+            // DISABLED: NON aggiornare la QoE all'avvio!
+            // UpdateFeedbackPanel();
+            Debug.Log("[DropdownManager] DISABLED: UpdateFeedbackPanel in Start (solo load PC in scena)");
         }
     }
 
@@ -70,7 +74,9 @@ public class PointCloudDropdownManager : MonoBehaviour
         controller.LoadPointCloud(name, controller.CurrentQuality);
         controller.transform.position = GetPositionInFront(currentDistance);
         Debug.Log($"[DropdownManager] Selected point cloud: {name}");
-        UpdateFeedbackPanel();
+        // DISABLED: NON aggiornare la QoE su cambio dropdown!
+        // UpdateFeedbackPanel();
+        Debug.Log("[DropdownManager] DISABLED: UpdateFeedbackPanel in OnPointCloudChanged");
     }
 
     void OnQualityChanged(int index)
@@ -79,7 +85,9 @@ public class PointCloudDropdownManager : MonoBehaviour
         controller.SetQuality(quality);
         controller.transform.position = GetPositionInFront(currentDistance);
         Debug.Log($"[DropdownManager] Quality changed to: {quality}");
-        UpdateFeedbackPanel();
+        // DISABLED: NON aggiornare la QoE su cambio qualità!
+        // UpdateFeedbackPanel();
+        Debug.Log("[DropdownManager] DISABLED: UpdateFeedbackPanel in OnQualityChanged");
     }
 
     void OnDistanceChanged(int index)
@@ -90,7 +98,9 @@ public class PointCloudDropdownManager : MonoBehaviour
             currentDistance = distance;
             controller.transform.position = GetPositionInFront(distance);
             Debug.Log($"[DropdownManager] Distance set to: {distance}m");
-            UpdateFeedbackPanel();
+            // DISABLED: NON aggiornare la QoE su cambio distanza!
+            // UpdateFeedbackPanel();
+            Debug.Log("[DropdownManager] DISABLED: UpdateFeedbackPanel in OnDistanceChanged");
         }
     }
 
@@ -123,6 +133,14 @@ public class PointCloudDropdownManager : MonoBehaviour
 
     void UpdateFeedbackPanel()
     {
+        // Blocca aggiornamento se sei in random!
+        var randomPlayer = FindObjectOfType<RandomPointCloudPlayer>();
+        if (randomPlayer != null && randomPlayer.IsRunning())
+        {
+            Debug.Log("[DropdownManager] SKIP UpdateFeedbackPanel: in random mode!");
+            return;
+        }
+
         if (qoeManager == null)
             qoeManager = FindObjectOfType<QoESliderManager>();
 
@@ -134,4 +152,27 @@ public class PointCloudDropdownManager : MonoBehaviour
             qoeManager.UpdatePCInfo(pcName, quality, distance);
         }
     }
+
+
+    public void DisableDropdownListeners()
+    {
+        pointCloudDropdown.onValueChanged.RemoveAllListeners();
+        qualityDropdown.onValueChanged.RemoveAllListeners();
+        distanceDropdown.onValueChanged.RemoveAllListeners();
+        Debug.Log("[DropdownManager] Dropdown listeners DISABLED!");
+    }
+
+    public void HideDropdownsAndStartButton()
+    {
+        pointCloudDropdown.gameObject.SetActive(false);
+        qualityDropdown.gameObject.SetActive(false);
+        distanceDropdown.gameObject.SetActive(false);
+
+        // Se hai il riferimento al bottone Start, disattivalo
+        var startBtn = GameObject.Find("Start");
+        if (startBtn != null) startBtn.SetActive(false);
+
+        Debug.Log("[DropdownManager] Dropdowns e StartButton nascosti!");
+    }
+
 }

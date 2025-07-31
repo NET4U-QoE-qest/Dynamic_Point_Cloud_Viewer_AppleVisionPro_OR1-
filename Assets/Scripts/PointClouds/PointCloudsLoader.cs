@@ -26,8 +26,10 @@ public class PointCloudsLoader : MonoBehaviour
     private void LoadAvailablePointClouds()
     {
         pcObjects.Clear();
-        var meshes = Resources.LoadAll<Mesh>("PointClouds");
 
+        // Questa parte resta SOLO se vuoi supportare mesh statiche da Resources.
+        // Se usi solo pipeline "frame-on-demand" dai file esterni, puoi anche eliminarla.
+        var meshes = Resources.LoadAll<Mesh>("PointClouds");
         Debug.Log($"[Loader] Found {meshes.Length} Meshes in Resources/PointClouds");
 
         // Group meshes by base name (removing numeric index like _0000)
@@ -59,14 +61,15 @@ public class PointCloudsLoader : MonoBehaviour
 
             obj.LoadAssetsFromResources();
 
-            if (obj.frames != null && obj.frames.Count > 0)
+            // -- NUOVA LOGICA: aggiungi all'elenco solo se framePaths esiste --
+            if (obj.framePaths != null && obj.framePaths.Count > 0)
             {
                 pcObjects.Add(obj);
-                Debug.Log($"[Loader] PointCloud {obj.pcName} loaded with {obj.frames.Count} frames.");
+                Debug.Log($"[Loader] PointCloud {obj.pcName} loaded with {obj.framePaths.Count} frame paths.");
             }
             else
             {
-                Debug.LogWarning($"[PCObject] No frames found in PointClouds/{obj.pcName}/qX/PointClouds");
+                Debug.LogWarning($"[PCObject] No frame paths found for {obj.pcName}");
             }
         }
 
@@ -83,10 +86,10 @@ public class PointCloudsLoader : MonoBehaviour
             return null;
         }
 
-        GameObject prefab = Resources.Load<GameObject>("Prefabs/Preview_PointCloudPrefab");
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/Preview_PointCloudPrefab_NET4U");
         if (prefab == null)
         {
-            Debug.LogError("❌ Prefab 'Preview_PointCloudPrefab' not found!");
+            Debug.LogError("Prefab 'Preview_PointCloudPrefab_NET4U' not found!");
             return null;
         }
 

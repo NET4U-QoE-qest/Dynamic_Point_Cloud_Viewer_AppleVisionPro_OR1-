@@ -2,10 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
-using UnityEngine.XR.ARFoundation;
-using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
 using TMPro;
 using LazyFollow = UnityEngine.XR.Interaction.Toolkit.UI.LazyFollow;
 
@@ -25,408 +22,191 @@ public class GoalManager : MonoBehaviour
 {
     public enum OnboardingGoals
     {
-        Empty,
-        FindSurfaces,
-        TapSurface,
+        Info1,
+        Info2,
+        Info3,
+        EnterCode // Last page with code input
     }
 
     Queue<Goal> m_OnboardingGoals;
     Goal m_CurrentGoal;
     bool m_AllGoalsFinished;
-    int m_SurfacesTapped;
     int m_CurrentGoalIndex = 0;
 
     [Serializable]
     class Step
     {
-        [SerializeField]
-        public GameObject stepObject;
-
-        [SerializeField]
-        public string buttonText;
-
+        [SerializeField] public GameObject stepObject;
+        [SerializeField] public string buttonText;
         public bool includeSkipButton;
     }
 
-    [SerializeField]
-    List<Step> m_StepList = new List<Step>();
+    [Header("Step List")]
+    [SerializeField] List<Step> m_StepList = new List<Step>();
+    [SerializeField] public TextMeshProUGUI m_StepButtonTextField;
 
-    [SerializeField]
-    public TextMeshProUGUI m_StepButtonTextField;
+    [Header("Buttons")]
+    [SerializeField] public GameObject m_ContinueButton;
+    [SerializeField] public GameObject m_SkipButton;
+    [SerializeField] public GameObject m_DoneButton;
 
-    [SerializeField]
-    public GameObject m_SkipButton;
+    [Header("User code input (last step)")]
+    [SerializeField] TMP_InputField userCodeInput;
+    [SerializeField] TMP_Text errorText;
+    public static string UserCode = "";
 
-    [SerializeField]
-    GameObject m_LearnButton;
+    [SerializeField] GameObject m_CoachingUIParent;
+    [SerializeField] LazyFollow m_GoalPanelLazyFollow;
 
-    [SerializeField]
-    GameObject m_LearnModal;
-
-    [SerializeField]
-    Button m_LearnModalButton;
-
-    [SerializeField]
-    GameObject m_CoachingUIParent;
-
-    [SerializeField]
-    FadeMaterial m_FadeMaterial;
-
-    [SerializeField]
-    Toggle m_PassthroughToggle;
-
-    [SerializeField]
-    LazyFollow m_GoalPanelLazyFollow;
-
-    [SerializeField]
-    GameObject m_TapTooltip;
-
-    [SerializeField]
-    GameObject m_VideoPlayer;
-
-    [SerializeField]
-    Toggle m_VideoPlayerToggle;
-
-    [SerializeField]
-    ARPlaneManager m_ARPlaneManager;
-
-    [SerializeField]
-    ObjectSpawner m_ObjectSpawner;
-
-    const int k_NumberOfSurfacesTappedToCompleteGoal = 1;
-    Vector3 m_TargetOffset = new Vector3(-.5f, -.25f, 1.5f);
-
+    // ---- INIT ----
     void Start()
     {
+        InitGoals();
+        ShowCurrentStep();
+    }
+
+    // ---- MAIN ----
+    void Update() { /* Optionally add logic here */ }
+
+    // ---- GOAL/STEP MANAGEMENT ----
+
+    void InitGoals()
+    {
         m_OnboardingGoals = new Queue<Goal>();
-        var welcomeGoal = new Goal(OnboardingGoals.Empty);
-        var findSurfaceGoal = new Goal(OnboardingGoals.FindSurfaces);
-        var tapSurfaceGoal = new Goal(OnboardingGoals.TapSurface);
-        var endGoal = new Goal(OnboardingGoals.Empty);
+        m_OnboardingGoals.Enqueue(new Goal(OnboardingGoals.Info1));
+        m_OnboardingGoals.Enqueue(new Goal(OnboardingGoals.Info2));
+        m_OnboardingGoals.Enqueue(new Goal(OnboardingGoals.Info3));
+        m_OnboardingGoals.Enqueue(new Goal(OnboardingGoals.EnterCode));
 
-        m_OnboardingGoals.Enqueue(welcomeGoal);
-        m_OnboardingGoals.Enqueue(findSurfaceGoal);
-        m_OnboardingGoals.Enqueue(tapSurfaceGoal);
-        m_OnboardingGoals.Enqueue(endGoal);
-
+        m_CurrentGoalIndex = 0;
         m_CurrentGoal = m_OnboardingGoals.Dequeue();
-        if (m_TapTooltip != null)
-            m_TapTooltip.SetActive(false);
 
-        if (m_VideoPlayer != null)
-        {
-            m_VideoPlayer.SetActive(false);
-
-            if (m_VideoPlayerToggle != null)
-                m_VideoPlayerToggle.isOn = false;
-        }
-
-        if (m_FadeMaterial != null)
-        {
-            m_FadeMaterial.FadeSkybox(false);
-
-            if (m_PassthroughToggle != null)
-                m_PassthroughToggle.isOn = false;
-        }
-
-        if (m_LearnButton != null)
-        {
-            m_LearnButton.GetComponent<Button>().onClick.AddListener(OpenModal); ;
-            m_LearnButton.SetActive(false);
-        }
-
-        if (m_LearnModal != null)
-        {
-            m_LearnModal.transform.localScale = Vector3.zero;
-        }
-
-        if (m_LearnModalButton != null)
-        {
-            m_LearnModalButton.onClick.AddListener(CloseModal);
-        }
-
-        if (m_ObjectSpawner == null)
-        {
-#if UNITY_2023_1_OR_NEWER
-            m_ObjectSpawner = FindAnyObjectByType<ObjectSpawner>();
-#else
-            m_ObjectSpawner = FindObjectOfType<ObjectSpawner>();
-#endif
-        }
+        if (errorText != null) errorText.text = "";
+        if (userCodeInput != null) userCodeInput.text = "";
     }
 
-    void OpenModal()
+    void ShowCurrentStep()
     {
-        if (m_LearnModal != null)
-        {
-            m_LearnModal.transform.localScale = Vector3.one;
-        }
-    }
+        // Disattiva tutte le card
+        for (int i = 0; i < m_StepList.Count; i++)
+            m_StepList[i].stepObject.SetActive(i == m_CurrentGoalIndex);
 
-    void CloseModal()
-    {
-        if (m_LearnModal != null)
-        {
-            m_LearnModal.transform.localScale = Vector3.zero;
-        }
-    }
-
-
-
-    void Update()
-    {
-        if (!m_AllGoalsFinished)
-        {
-            ProcessGoals();
-        }
-
-        // Debug Input
-#if UNITY_EDITOR
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            CompleteGoal();
-        }
-#endif
-    }
-
-    void ProcessGoals()
-    {
-        if (!m_CurrentGoal.Completed)
-        {
-            switch (m_CurrentGoal.CurrentGoal)
-            {
-                case OnboardingGoals.Empty:
-                    m_GoalPanelLazyFollow.positionFollowMode = LazyFollow.PositionFollowMode.Follow;
-                    break;
-                case OnboardingGoals.FindSurfaces:
-                    m_GoalPanelLazyFollow.positionFollowMode = LazyFollow.PositionFollowMode.Follow;
-                    break;
-                case OnboardingGoals.TapSurface:
-                    if (m_TapTooltip != null)
-                    {
-                        m_TapTooltip.SetActive(true);
-                    }
-                    m_GoalPanelLazyFollow.positionFollowMode = LazyFollow.PositionFollowMode.None;
-                    break;
-            }
-        }
-    }
-
-    void CompleteGoal()
-    {
-        if (m_CurrentGoal.CurrentGoal == OnboardingGoals.TapSurface)
-            m_ObjectSpawner.objectSpawned -= OnObjectSpawned;
-
-        // disable tooltips before setting next goal
-        DisableTooltips();
-
-        m_CurrentGoal.Completed = true;
-        m_CurrentGoalIndex++;
-        if (m_OnboardingGoals.Count > 0)
-        {
-            m_CurrentGoal = m_OnboardingGoals.Dequeue();
-            m_StepList[m_CurrentGoalIndex - 1].stepObject.SetActive(false);
-            m_StepList[m_CurrentGoalIndex].stepObject.SetActive(true);
+        // Aggiorna testo bottone e visibilità skip
+        if (m_StepButtonTextField != null)
             m_StepButtonTextField.text = m_StepList[m_CurrentGoalIndex].buttonText;
-            m_SkipButton.SetActive(m_StepList[m_CurrentGoalIndex].includeSkipButton);
+
+        // Bottone logica: SOLO l'ultimo step (EnterCode) mostra Done, gli altri Continue/Skip
+        if (m_CurrentGoal.CurrentGoal == OnboardingGoals.EnterCode)
+        {
+            m_ContinueButton.SetActive(false);
+            m_SkipButton.SetActive(false);
+            m_DoneButton.SetActive(true);
         }
         else
         {
-            m_AllGoalsFinished = true;
-            ForceEndAllGoals();
-        }
-
-        if (m_CurrentGoal.CurrentGoal == OnboardingGoals.FindSurfaces)
-        {
-            if (m_FadeMaterial != null)
-                m_FadeMaterial.FadeSkybox(true);
-
-            if (m_PassthroughToggle != null)
-                m_PassthroughToggle.isOn = true;
-
-            if (m_LearnButton != null)
-            {
-                m_LearnButton.SetActive(true);
-            }
-
-            StartCoroutine(TurnOnPlanes());
-        }
-        else if (m_CurrentGoal.CurrentGoal == OnboardingGoals.TapSurface)
-        {
-            if (m_LearnButton != null)
-            {
-                m_LearnButton.SetActive(false);
-            }
-            m_SurfacesTapped = 0;
-            m_ObjectSpawner.objectSpawned += OnObjectSpawned;
+            m_ContinueButton.SetActive(true);
+            m_SkipButton.SetActive(m_StepList[m_CurrentGoalIndex].includeSkipButton);
+            m_DoneButton.SetActive(false);
         }
     }
 
-    public IEnumerator TurnOnPlanes()
-    {
-        yield return new WaitForSeconds(1f);
-        m_ARPlaneManager.enabled = true;
-    }
-
-    void DisableTooltips()
-    {
-        if (m_CurrentGoal.CurrentGoal == OnboardingGoals.TapSurface)
-        {
-            if (m_TapTooltip != null)
-            {
-                m_TapTooltip.SetActive(false);
-            }
-        }
-    }
-
-    public void ForceCompleteGoal()
+    public void OnContinueClicked()
     {
         CompleteGoal();
     }
 
-    public void ForceEndAllGoals()
+    public void OnSkipClicked()
     {
-        m_CoachingUIParent.transform.localScale = Vector3.zero;
-
-        TurnOnVideoPlayer();
-
-        if (m_VideoPlayerToggle != null)
-            m_VideoPlayerToggle.isOn = true;
-
-
-        if (m_FadeMaterial != null)
-        {
-            m_FadeMaterial.FadeSkybox(true);
-
-            if (m_PassthroughToggle != null)
-                m_PassthroughToggle.isOn = true;
-        }
-
-        if (m_LearnButton != null)
-        {
-            m_LearnButton.SetActive(false);
-        }
-
-        if (m_LearnModal != null)
-        {
-            m_LearnModal.transform.localScale = Vector3.zero;
-        }
-
-        StartCoroutine(TurnOnPlanes());
+        // Salta direttamente all'ultimo step (EnterCode)
+        m_CurrentGoalIndex = m_StepList.Count - 1;
+        m_CurrentGoal = new Goal(OnboardingGoals.EnterCode);
+        ShowCurrentStep();
     }
 
-    public void ResetCoaching()
+    void CompleteGoal()
     {
-        m_CoachingUIParent.transform.localScale = Vector3.one;
+        m_CurrentGoal.Completed = true;
+        m_CurrentGoalIndex++;
 
-        m_OnboardingGoals.Clear();
-        m_OnboardingGoals = new Queue<Goal>();
-        var welcomeGoal = new Goal(OnboardingGoals.Empty);
-        var findSurfaceGoal = new Goal(OnboardingGoals.FindSurfaces);
-        var tapSurfaceGoal = new Goal(OnboardingGoals.TapSurface);
-        var endGoal = new Goal(OnboardingGoals.Empty);
+        if (m_CurrentGoalIndex >= m_StepList.Count)
+            return;
 
-        m_OnboardingGoals.Enqueue(welcomeGoal);
-        m_OnboardingGoals.Enqueue(findSurfaceGoal);
-        m_OnboardingGoals.Enqueue(tapSurfaceGoal);
-        m_OnboardingGoals.Enqueue(endGoal);
-
-        for (int i = 0; i < m_StepList.Count; i++)
+        if (m_OnboardingGoals.Count > 0)
         {
-            if (i == 0)
-            {
-                m_StepList[i].stepObject.SetActive(true);
-                m_SkipButton.SetActive(m_StepList[i].includeSkipButton);
-                m_StepButtonTextField.text = m_StepList[i].buttonText;
-            }
-            else
-            {
-                m_StepList[i].stepObject.SetActive(false);
-            }
-        }
-
-        m_CurrentGoal = m_OnboardingGoals.Dequeue();
-        m_AllGoalsFinished = false;
-
-        if (m_TapTooltip != null)
-            m_TapTooltip.SetActive(false);
-
-        if (m_LearnButton != null)
-        {
-            m_LearnButton.SetActive(false);
-        }
-
-        if (m_LearnModal != null)
-        {
-            m_LearnModal.transform.localScale = Vector3.zero;
-        }
-
-        m_CurrentGoalIndex = 0;
-    }
-
-    void OnObjectSpawned(GameObject spawnedObject)
-    {
-        m_SurfacesTapped++;
-        if (m_CurrentGoal.CurrentGoal == OnboardingGoals.TapSurface && m_SurfacesTapped >= k_NumberOfSurfacesTappedToCompleteGoal)
-        {
-            CompleteGoal();
-            m_GoalPanelLazyFollow.positionFollowMode = LazyFollow.PositionFollowMode.Follow;
-        }
-    }
-
-    public void TooglePlayer(bool visibility)
-    {
-        if (visibility)
-        {
-            TurnOnVideoPlayer();
+            m_CurrentGoal = m_OnboardingGoals.Dequeue();
+            ShowCurrentStep();
         }
         else
         {
-            m_VideoPlayer.SetActive(false);
+            m_AllGoalsFinished = true;
+            if (m_CoachingUIParent != null)
+                m_CoachingUIParent.transform.localScale = Vector3.zero;
         }
     }
 
-    void TurnOnVideoPlayer()
+    // ---- CODE INPUT LOGIC ----
+
+    public void OnUserCodeEndEdit(string value)
     {
-        if (m_VideoPlayer.activeSelf)
-            return;
+        // Optional: Validate as user types
+        if (errorText == null) return;
+        if (!string.IsNullOrEmpty(value))
+            errorText.text = "";
+        else
+            errorText.text = "Please enter your code.";
+    }
 
-        var follow = m_VideoPlayer.GetComponent<LazyFollow>();
-        if (follow != null)
-            follow.rotationFollowMode = LazyFollow.RotationFollowMode.None;
+    public void OnDoneClicked()
+    {
+        string code = userCodeInput != null ? userCodeInput.text.Trim() : "";
 
-        m_VideoPlayer.SetActive(false);
-        var target = Camera.main.transform;
-        var targetRotation = target.rotation;
-        var newTransform = target;
-        var targetEuler = targetRotation.eulerAngles;
-        targetRotation = Quaternion.Euler
-        (
-            0f,
-            targetEuler.y,
-            targetEuler.z
-        );
+        if (!string.IsNullOrEmpty(code))
+        {
+            UserCode = code;
+            PlayerPrefs.SetString("UserCode", code);
 
-        newTransform.rotation = targetRotation;
-        var targetPosition = target.position + newTransform.TransformVector(m_TargetOffset);
-        m_VideoPlayer.transform.position = targetPosition;
+            if (userCodeInput != null)
+                userCodeInput.DeactivateInputField();
+            if (userCodeInput != null)
+                userCodeInput.gameObject.SetActive(false);
+
+            // AGGIORNA SUBITO IL CAMPO USER (TMP) SULLA MANO SINISTRA
+            var qoe = FindObjectOfType<QoESliderManager>();
+            if (qoe != null)
+                qoe.UpdateUserCodeInfo(code);
+
+            if (m_CoachingUIParent != null)
+                m_CoachingUIParent.transform.localScale = Vector3.zero;
+
+            m_AllGoalsFinished = true;
+            Debug.Log($"[GoalManager] Codice salvato: {code}");
+        }
+        else
+        {
+            if (errorText != null)
+                errorText.text = "Please enter your code.";
+        }
+    }
 
 
-        var forward = target.position - m_VideoPlayer.transform.position;
-        var targetPlayerRotation = forward.sqrMagnitude > float.Epsilon ? Quaternion.LookRotation(forward, Vector3.up) : Quaternion.identity;
-        targetPlayerRotation *= Quaternion.Euler(new Vector3(0f, 180f, 0f));
-        var targetPlayerEuler = targetPlayerRotation.eulerAngles;
-        var currentEuler = m_VideoPlayer.transform.rotation.eulerAngles;
-        targetPlayerRotation = Quaternion.Euler
-        (
-            currentEuler.x,
-            targetPlayerEuler.y,
-            currentEuler.z
-        );
 
-        m_VideoPlayer.transform.rotation = targetPlayerRotation;
-        m_VideoPlayer.SetActive(true);
-        if (follow != null)
-            follow.rotationFollowMode = LazyFollow.RotationFollowMode.LookAtWithWorldUp;
+
+
+
+
+
+
+
+
+
+    // ---- UTILITY ----
+
+    public void ResetCoaching()
+    {
+        InitGoals();
+        ShowCurrentStep();
+        m_AllGoalsFinished = false;
+        if (m_CoachingUIParent != null)
+            m_CoachingUIParent.transform.localScale = Vector3.one;
     }
 }

@@ -6,10 +6,12 @@ public class PointCloudObject
 {
     public string pcName;
     public PCObjectType objectType = PCObjectType.Unknown;
-    public int[] qualities = new int[] { 1, 2, 3 };
-    public List<Mesh> frames = new List<Mesh>();
+    public int[] qualities = new int[] { 1, 2, 3, 4 };
 
-    public Dictionary<int, Mesh[]> pointClouds = new Dictionary<int, Mesh[]>();
+    // Nuova definizione: Lista dei path ai file PLY per ogni frame (frame-on-demand)
+    public List<string> framePaths = new List<string>();
+
+    // Mesh statiche (se ancora necessarie)
     public Dictionary<int, Mesh[]> meshes = new Dictionary<int, Mesh[]>();
     public Dictionary<int, Material[]> meshMaterials = new Dictionary<int, Material[]>();
 
@@ -21,28 +23,25 @@ public class PointCloudObject
             return;
         }
 
+        framePaths.Clear();
+
+        // Aggiorna framePaths caricando percorsi (esempio per risolvere errore)
         foreach (int q in qualities)
         {
-            // Load Mesh (Point Clouds)
             string pcPath = $"PointClouds/{pcName}/q{q}/PointClouds";
-            Mesh[] pcs = Resources.LoadAll<Mesh>(pcPath);
-            if (pcs.Length > 0)
+            var loadedMeshes = Resources.LoadAll<Mesh>(pcPath);
+            foreach (var mesh in loadedMeshes)
             {
-                pointClouds[q] = pcs;
-                Debug.Log($"[PCObject] Loaded {pcs.Length} point clouds from {pcPath}");
-            }
-            else
-            {
-                Debug.LogWarning($"[PCObject] No point clouds found in {pcPath}");
+                framePaths.Add(pcPath + "/" + mesh.name + ".ply");
             }
 
-            // Load Mesh + Material (if available)
+            // Opzionale: Carica Mesh statiche (se necessarie)
             string meshPath = $"PointClouds/{pcName}/q{q}/Meshes";
             GameObject[] meshPrefabs = Resources.LoadAll<GameObject>(meshPath);
             if (meshPrefabs.Length > 0)
             {
-                List<Mesh> meshList = new List<Mesh>();
-                List<Material> matList = new List<Material>();
+                List<Mesh> meshList = new();
+                List<Material> matList = new();
 
                 foreach (GameObject go in meshPrefabs)
                 {
