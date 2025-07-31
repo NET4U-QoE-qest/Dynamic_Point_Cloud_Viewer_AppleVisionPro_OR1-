@@ -20,14 +20,14 @@ Workflow:
 3. Enter the user code in the initial login menu  
 4. Evaluate the test point cloud, which is shown first to let the user get familiar with the interface  
 5. Start the randomized evaluation sequence:  
-- One point cloud is randomly selected from the dataset  
-- It is displayed at a fixed distance in front of the user  
-- The QoE slider immediately appears for evaluation  
+   - One point cloud is randomly selected from the dataset  
+   - It is displayed at a fixed distance in front of the user  
+   - The QoE slider immediately appears for evaluation  
 6. The user rates each point cloud using the 10-level slider and taps Submit  
 7. At the end of the sequence:  
-- A final banner informs the user that the evaluation session is complete  
-- All ratings are saved locally in:  
-  `valutazioni_qoe.csv` (stored in `Application.persistentDataPath`)  
+   - A final banner informs the user that the evaluation session is complete  
+   - All ratings are saved locally in:  
+`valutazioni_qoe.csv` (stored in `Application.persistentDataPath`)  
 
 File Exclusion (.gitignore):  
 - Raw point clouds: `*.ply`, `*.bin`  
